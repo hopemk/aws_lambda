@@ -43,7 +43,7 @@ exports.lambdaHandler = async (event, context) => {
                 body = await dynamo.scan({ TableName: event.queryStringParameters.TableName }).promise();
                 break;
             case 'POST':
-                body = await dynamo.put(JSON.parse(event.body)).promise();
+                body = await createItem(params)
                 break;
             case 'PUT':
                 body = await dynamo.update(JSON.parse(event.body)).promise();
@@ -57,7 +57,7 @@ exports.lambdaHandler = async (event, context) => {
     } finally {
         body = JSON.stringify(body);
     }
-
+/*
     try {
         // const ret = await axios(url);
         response = {
@@ -71,8 +71,12 @@ exports.lambdaHandler = async (event, context) => {
         console.log(err);
         return err;
     }
-
-    return response
+*/
+    return {
+        statusCode,
+        ret,
+        headers,
+    };
 };
 async function createItem(params){
     try {
