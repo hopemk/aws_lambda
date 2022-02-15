@@ -17,11 +17,7 @@ let response;
  * 
  */
 exports.lambdaHandler = async (event, context) => {
-    let body;
-    let statusCode = 200;
-    const headers = {
-        'Content-Type': 'application/json',
-    };
+    //let {email, name, contact, message} = context;
     const params = {
         TableName : 'contact_me',
         /* Item properties will depend on your application concerns */
@@ -35,35 +31,12 @@ exports.lambdaHandler = async (event, context) => {
         }
       }
     try {
-        switch (event.httpMethod) {
-            case 'DELETE':
-                body = await dynamo.delete(JSON.parse(event.body)).promise();
-                break;
-            case 'GET':
-                body = await dynamo.scan({ TableName: event.queryStringParameters.TableName }).promise();
-                break;
-            case 'POST':
-                body = await dynamo.put(JSON.parse(event.body)).promise();
-                break;
-            case 'PUT':
-                body = await dynamo.update(JSON.parse(event.body)).promise();
-                break;
-            default:
-                throw new Error(`Unsupported method "${event.httpMethod}"`);
-        }
-    } catch (err) {
-        statusCode = '400';
-        body = err.message;
-    } finally {
-        body = JSON.stringify(body);
-    }
-
-    try {
+        const ret = await createItem(params)
         // const ret = await axios(url);
         response = {
             'statusCode': 200,
             'body': JSON.stringify({
-                message: 'hello world',
+                message: event,
                 // location: ret.data.trim()
             })
         }
@@ -74,6 +47,7 @@ exports.lambdaHandler = async (event, context) => {
 
     return response
 };
+
 async function createItem(params){
     try {
       await docClient.put(params).promise();
