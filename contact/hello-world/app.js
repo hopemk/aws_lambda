@@ -26,12 +26,12 @@ exports.lambdaHandler = async (event, context) => {
         TableName : 'contact_me',
         /* Item properties will depend on your application concerns */
         Item: {
-          contact: "0774241860",
-           me:"_thisme",
-           name: "hope kugotsi",
-           email: "hopek@gmail.com",
+          contact: context.contact,
+           me:context.me,
+           name: context.name,
+           email: context.email,
            
-           message: "test"
+           message: context.message
         }
       }
     try {
