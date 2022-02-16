@@ -40,7 +40,7 @@ exports.lambdaHandler = async (event, context) => {
                 body = await dynamo.delete(JSON.parse(event.body)).promise();
                 break;
             case 'GET':
-                body = await dynamo.scan({ TableName: event.queryStringParameters.TableName }).promise();
+                body = await createItem(params)
                 break;
             case 'POST':
                 body = await createItem(params)
