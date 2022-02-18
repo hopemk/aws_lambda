@@ -40,7 +40,7 @@ exports.lambdaHandler = async (event, context) => {
                 body = await dynamo.delete(JSON.parse(event.body)).promise();
                 break;
             case 'GET':
-                body = await createItem(params)
+                body = await getItem(params)
                 break;
             case 'POST':
                 body = await createItem(params)
@@ -83,5 +83,13 @@ async function createItem(params){
       await docClient.put(params).promise();
     } catch (err) {
       return err;
+    }
+  }
+  async function getItem(params){
+    try {
+      const data = await docClient.get(params).promise()
+      return data
+    } catch (err) {
+      return err
     }
   }
