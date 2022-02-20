@@ -22,22 +22,11 @@ exports.lambdaHandler = async (event, context) => {
     const headers = {
         'Content-Type': 'application/json',
     };
-    const params = {
-        TableName : 'contact_me',
-        /* Item properties will depend on your application concerns */
-        Item: {
-          contact: context.contact,
-           me:context.me,
-           name: context.name,
-           email: context.email,
-           
-           message: context.message
-        }
-      }
+    
     try {
         switch (event.httpMethod) {
             case 'DELETE':
-                body = await dynamo.delete(JSON.parse(event.body)).promise();
+                body = createItem(context)
                 break;
             case 'GET':
                 body = await getItem(params)
@@ -78,13 +67,35 @@ exports.lambdaHandler = async (event, context) => {
         headers,
     };
 };
-async function createItem(params){
+function createItem(context){
+    const params = {
+        TableName : 'contact_me',
+        /* Item properties will depend on your application concerns */
+        Item: {
+          contact: context.contact,
+           me:context.me,
+           name: context.name,
+           email: context.email,
+           
+           message: context.message
+        }
+      }
+    ddb.putItem(params, function(err, data) {
+        if (err) {
+            return "Error", err;
+        } else {
+          return "Success", data;
+        }
+      });
+      /*
     try {
       await docClient.put(params).promise();
     } catch (err) {
       return err;
     }
+    */
   }
+  
   async function getItem(params){
     try {
       const data = await docClient.get(params).promise()
