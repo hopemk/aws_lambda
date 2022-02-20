@@ -1,7 +1,7 @@
 // const axios = require('axios')
 // const url = 'http://checkip.amazonaws.com/';
 const AWS = require('aws-sdk');
-const docClient = new AWS.DynamoDB.DocumentClient({region: 'us-east-2'});
+const ddb = new AWS.DynamoDB.DocumentClient({region: 'us-east-2'});
 let response;
 
 /**
@@ -26,13 +26,13 @@ exports.lambdaHandler = async (event, context) => {
     try {
         switch (event.httpMethod) {
             case 'DELETE':
-                body = createItem(context)
+                body = deleteItem(context)
                 break;
             case 'GET':
-                body = await getItem(params)
+                body = getItem(context)
                 break;
             case 'POST':
-                body = await createItem(params)
+                body = createItem(context)
                 break;
             case 'PUT':
                 body = await dynamo.update(JSON.parse(event.body)).promise();
@@ -80,7 +80,7 @@ function createItem(context){
            message: context.message
         }
       }
-    ddb.putItem(params, function(err, data) {
+    ddb.put(params, function(err, data) {
         if (err) {
             return "Error", err;
         } else {
@@ -96,11 +96,41 @@ function createItem(context){
     */
   }
   
-  async function getItem(params){
+  function getItem(context){
+      const params = {
+        TableName: 'contact_me',
+        Key: {
+            contact: context.contact,
+            me:context.me,
+        }
+      };
+      ddb.get(params, function(err, data) {
+        if (err) {
+          return "Error", err;
+        } else {
+          return "Success", data.Item;
+        }
+      });
+      function deleteItem(context){
+        const params = {
+          TableName: 'contact_me',
+          Key: {
+              contact: context.contact,
+              me:context.me,
+          }
+        };
+        ddb.delete(params, function(err, data) {
+          if (err) {
+            return "Error", err;
+          } else {
+            return "Success", data.Item;
+          }
+        });
+      /*
     try {
       const data = await docClient.get(params).promise()
       return data
     } catch (err) {
       return err
-    }
+    }*/
   }
