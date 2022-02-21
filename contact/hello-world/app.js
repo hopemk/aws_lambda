@@ -35,7 +35,7 @@ exports.lambdaHandler = async (event, context) => {
                 body = createItem(context)
                 break;
             case 'PUT':
-                body = await dynamo.update(JSON.parse(event.body)).promise();
+                body = updateItem(context)
                 break;
             default:
                 throw new Error(`Unsupported method "${event.httpMethod}"`);
@@ -95,7 +95,35 @@ function createItem(context){
     }
     */
   }
-  
+  function updateItem(context){
+    const params = {
+        TableName: 'contact_me',
+        Key: {
+          contact: context.contact,
+          me:context.me
+        },
+        UpdateExpression: 'set name = :n, message = :m',
+        ExpressionAttributeValues: {
+          ':n' : context.name,
+          ':m' : context.message
+        }
+      };
+    ddb.update(params, function(err, data) {
+        if (err) {
+            return "Error", err;
+        } else {
+          return "Success", data;
+        }
+      });
+      /*
+    try {
+      await docClient.put(params).promise();
+    } catch (err) {
+      return err;
+    }
+    */
+  }
+
   function getItem(context){
       const params = {
         TableName: 'contact_me',
@@ -111,6 +139,7 @@ function createItem(context){
           return "Success", data.Item;
         }
       });
+    }
       function deleteItem(context){
         const params = {
           TableName: 'contact_me',
