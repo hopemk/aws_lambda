@@ -63,7 +63,7 @@ exports.lambdaHandler = async (event, context) => {
 */
     return {
         statusCode,
-        ret,
+        body,
         headers,
     };
 };
