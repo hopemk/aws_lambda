@@ -29,7 +29,9 @@ exports.lambdaHandler = async (event, context) => {
                 body = deleteItem(context)
                 break;
             case 'GET':
-                body = getItem(context)
+                          
+                body = getItem(context);
+                console.log("console" + body)
                 break;
             case 'POST':
                 body = createItem(context)
@@ -62,12 +64,16 @@ exports.lambdaHandler = async (event, context) => {
     }
 */
     return {
-        statusCode,
-        body,
-        headers,
+        'statusCode': 200,
+        'body': JSON.stringify({
+          message: body
+          // location: ret.data.trim()
+      })
+        /*headers,*/
     };
 };
 function createItem(context){
+  let ret;
     const params = {
         TableName : 'contact_me',
         /* Item properties will depend on your application concerns */
@@ -82,11 +88,12 @@ function createItem(context){
       }
     ddb.put(params, function(err, data) {
         if (err) {
-            return "Error", err;
+            ret = "Error";
         } else {
-          return "Success", data;
+          ret = "Success";
         }
       });
+      return ret;
       /*
     try {
       await docClient.put(params).promise();
@@ -96,6 +103,7 @@ function createItem(context){
     */
   }
   function updateItem(context){
+    let ret;
     const params = {
         TableName: 'contact_me',
         Key: {
@@ -110,11 +118,12 @@ function createItem(context){
       };
     ddb.update(params, function(err, data) {
         if (err) {
-            return "Error", err;
+            return "Error";
         } else {
-          return "Success", data;
+          return "Success";
         }
       });
+      return ret;
       /*
     try {
       await docClient.put(params).promise();
@@ -125,20 +134,24 @@ function createItem(context){
   }
 
   function getItem(context){
+      let ret;
       const params = {
         TableName: 'contact_me',
+        /*
         Key: {
             contact: context.contact,
             me:context.me,
         }
+        */
       };
       ddb.get(params, function(err, data) {
         if (err) {
-          return "Error", err;
+          ret = err;
         } else {
-          return "Success", data.Item;
+          ret = data;
         }
       });
+      return ret;
     }
       function deleteItem(context){
         const params = {
