@@ -19,24 +19,24 @@ let response;
 exports.lambdaHandler = async (event, context) => {
     //let {email, name, contact, message} = context;
     const params = {
-        TableName : 'contact_me',
-        /* Item properties will depend on your application concerns */
-        Item: {
-          contact: "0774241860",
-           me:"_thisme",
-           name: "hope kugotsi",
-           email: "hopek@gmail.com",
-           
-           message: "test"
-        }
+      TableName : 'contact_me',
+      /* Item properties will depend on your application concerns */
+      Item: {
+        contact: '096352521',
+         me:'juuds1',
+         name: 'hyuwsd',
+         email: 'this@that.com',
+         
+         message: 'test'
       }
+    }
     try {
-        const ret = await createItem(params)
+        const ret = await getItem()
         // const ret = await axios(url);
         response = {
             'statusCode': 200,
             'body': JSON.stringify({
-                message: event,
+                message: ret,
                 // location: ret.data.trim()
             })
         }
@@ -47,11 +47,57 @@ exports.lambdaHandler = async (event, context) => {
 
     return response
 };
-
-async function createItem(params){
+/*
+async function createItem(context){
+  let ret;
+    const params = {
+        TableName : 'contact_me',
+        /* Item properties will depend on your application concerns 
+        Item: {
+          contact: '096352521',
+           me:'juuds1',
+           name: 'hyuwsd',
+           email: 'this@that.com',
+           
+           message: 'test'
+        }
+      }
+    await docClient.put(params, function(err, data) {
+        if (err) {
+            ret = "Error";
+        } else {
+          ret = data;
+        }
+      });
+      return ret;
+      /*
     try {
       await docClient.put(params).promise();
     } catch (err) {
       return err;
+    }
+    
+  }
+
+ */
+async function createItem(params){
+    
+      await docClient.put(params).promise();
+  }
+  async function getItem(){
+    const params = {
+      TableName: 'contact_me',
+      
+      Key: {
+          contact: '0777777',
+          me:'_thisme',
+      }
+      
+    };
+    try {
+      const data = await docClient.get(params).promise()
+      return data
+    } catch (err) {
+      return err
     }
   }

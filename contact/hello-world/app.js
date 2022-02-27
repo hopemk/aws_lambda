@@ -26,18 +26,16 @@ exports.lambdaHandler = async (event, context) => {
     try {
         switch (event.httpMethod) {
             case 'DELETE':
-                body = deleteItem(context)
+                body = await deleteItem(JSON.parse(event.body))
                 break;
             case 'GET':
-                          
-                body = getItem(context);
-                console.log("console" + body)
+                body = event.pathParameters.id;
                 break;
             case 'POST':
-                body = createItem(context)
+                body = await createItem(JSON.parse(event.body))
                 break;
             case 'PUT':
-                body = updateItem(context)
+                body = await updateItem(JSON.parse(event.body))
                 break;
             default:
                 throw new Error(`Unsupported method "${event.httpMethod}"`);
@@ -66,34 +64,38 @@ exports.lambdaHandler = async (event, context) => {
     return {
         'statusCode': 200,
         'body': JSON.stringify({
-          message: body
+          'message': body
           // location: ret.data.trim()
-      })
-        /*headers,*/
+      }),
+        'headers': headers,
     };
 };
-function createItem(context){
+async function createItem(context){
   let ret;
+    const {contact, me,name,email,message} = context;
     const params = {
         TableName : 'contact_me',
         /* Item properties will depend on your application concerns */
         Item: {
-          contact: context.contact,
-           me:context.me,
-           name: context.name,
-           email: context.email,
+          contact: contact,
+           me:me,
+           name: name,
+           email: email,
            
-           message: context.message
+           message: message
         }
       }
-    ddb.put(params, function(err, data) {
+      /*
+    await ddb.put(params, function(err, data) {
         if (err) {
             ret = "Error";
         } else {
-          ret = "Success";
+          ret = data;
         }
-      });
-      return ret;
+      });*/
+      await ddb.put(params).promise();
+  return "saved";
+
       /*
     try {
       await docClient.put(params).promise();
@@ -102,28 +104,26 @@ function createItem(context){
     }
     */
   }
-  function updateItem(context){
-    let ret;
+  async function updateItem(context){
     const params = {
         TableName: 'contact_me',
         Key: {
           contact: context.contact,
           me:context.me
         },
-        UpdateExpression: 'set name = :n, message = :m',
+        UpdateExpression: 'set #name = :n, message = :m, email= :e',
+        ExpressionAttributeNames:{
+          "#name": "name"
+         },
         ExpressionAttributeValues: {
           ':n' : context.name,
-          ':m' : context.message
+          ':m' : context.message,
+          ':e' : context.email
         }
+        
       };
-    ddb.update(params, function(err, data) {
-        if (err) {
-            return "Error";
-        } else {
-          return "Success";
-        }
-      });
-      return ret;
+    await ddb.update(params).promise();
+    return 'saved';
       /*
     try {
       await docClient.put(params).promise();
@@ -133,27 +133,22 @@ function createItem(context){
     */
   }
 
-  function getItem(context){
-      let ret;
+  async function getItem(context){
+    let ret;
       const params = {
         TableName: 'contact_me',
-        /*
+        
         Key: {
-            contact: context.contact,
-            me:context.me,
+            contact: '0777777',
+            me:'_thisme',
         }
-        */
+        
       };
-      ddb.get(params, function(err, data) {
-        if (err) {
-          ret = err;
-        } else {
-          ret = data;
-        }
-      });
+      
+      ret = await ddb.get(params).promise();
       return ret;
     }
-      function deleteItem(context){
+      async function deleteItem(context){
         const params = {
           TableName: 'contact_me',
           Key: {
@@ -161,13 +156,8 @@ function createItem(context){
               me:context.me,
           }
         };
-        ddb.delete(params, function(err, data) {
-          if (err) {
-            return "Error", err;
-          } else {
-            return "Success", data.Item;
-          }
-        });
+       await ddb.delete(params).promise();
+  return 'deleted';
       /*
     try {
       const data = await docClient.get(params).promise()
@@ -176,3 +166,15 @@ function createItem(context){
       return err
     }*/
   }
+  
+  async function listItems(){
+    const params = {
+  TableName : 'contact_me'
+};
+  try {
+    const data = await ddb.scan(params).promise()
+    return data
+  } catch (err) {
+    return err
+  }
+}
