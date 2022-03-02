@@ -1,8 +1,8 @@
 // const axios = require('axios')
 // const url = 'http://checkip.amazonaws.com/';
 const AWS = require('aws-sdk');
-const ddb = new AWS.DynamoDB.DocumentClient({region: 'us-east-2'});
-let response;
+const uuid = require('uuid');
+const ddb = new AWS.DynamoDB.DocumentClient({ region: 'us-east-2' });
 
 /**
  *
@@ -17,164 +17,141 @@ let response;
  * 
  */
 exports.lambdaHandler = async (event, context) => {
-    let body;
-    let statusCode = 200;
-    const headers = {
-        'Content-Type': 'application/json',
-    };
-    
-    try {
-        switch (event.httpMethod) {
-            case 'DELETE':
-                body = await deleteItem(JSON.parse(event.body))
-                break;
-            case 'GET':
-                body = event.pathParameters.id;
-                break;
-            case 'POST':
-                body = await createItem(JSON.parse(event.body))
-                break;
-            case 'PUT':
-                body = await updateItem(JSON.parse(event.body))
-                break;
-            default:
-                throw new Error(`Unsupported method "${event.httpMethod}"`);
-        }
-    } catch (err) {
-        statusCode = '400';
-        body = err.message;
-    } finally {
-        body = JSON.stringify(body);
-    }
-/*
-    try {
-        // const ret = await axios(url);
-        response = {
-            'statusCode': 200,
-            'body': JSON.stringify({
-                message: 'hello world',
-                // location: ret.data.trim()
-            })
-        }
-    } catch (err) {
-        console.log(err);
-        return err;
-    }
-*/
-    return {
-        'statusCode': 200,
-        'body': JSON.stringify({
-          'message': body
-          // location: ret.data.trim()
-      }),
-        'headers': headers,
-    };
-};
-async function createItem(context){
-  let ret;
-    const {contact, me,name,email,message} = context;
-    const params = {
-        TableName : 'contact_me',
-        /* Item properties will depend on your application concerns */
-        Item: {
-          contact: contact,
-           me:me,
-           name: name,
-           email: email,
-           
-           message: message
-        }
-      }
-      /*
-    await ddb.put(params, function(err, data) {
-        if (err) {
-            ret = "Error";
-        } else {
-          ret = data;
-        }
-      });*/
-      await ddb.put(params).promise();
-  return "saved";
+  let body;
+  let statusCode = 200;
+  const headers = {
+    'Content-Type': 'application/json',
+  };
 
-      /*
-    try {
-      await docClient.put(params).promise();
-    } catch (err) {
-      return err;
-    }
-    */
-  }
-  async function updateItem(context){
-    const params = {
-        TableName: 'contact_me',
-        Key: {
-          contact: context.contact,
-          me:context.me
-        },
-        UpdateExpression: 'set #name = :n, message = :m, email= :e',
-        ExpressionAttributeNames:{
-          "#name": "name"
-         },
-        ExpressionAttributeValues: {
-          ':n' : context.name,
-          ':m' : context.message,
-          ':e' : context.email
-        }
-        
-      };
-    await ddb.update(params).promise();
-    return 'saved';
-      /*
-    try {
-      await docClient.put(params).promise();
-    } catch (err) {
-      return err;
-    }
-    */
-  }
-
-  async function getItem(context){
-    let ret;
-      const params = {
-        TableName: 'contact_me',
-        
-        Key: {
-            contact: '0777777',
-            me:'_thisme',
-        }
-        
-      };
-      
-      ret = await ddb.get(params).promise();
-      return ret;
-    }
-      async function deleteItem(context){
-        const params = {
-          TableName: 'contact_me',
-          Key: {
-              contact: context.contact,
-              me:context.me,
-          }
-        };
-       await ddb.delete(params).promise();
-  return 'deleted';
-      /*
-    try {
-      const data = await docClient.get(params).promise()
-      return data
-    } catch (err) {
-      return err
-    }*/
-  }
-  
-  async function listItems(){
-    const params = {
-  TableName : 'contact_me'
-};
   try {
-    const data = await ddb.scan(params).promise()
-    return data
+    switch (event.httpMethod) {
+      case 'DELETE':
+        body = await deleteItem(JSON.parse(event.body))
+        break;
+      case 'GET':
+        if (event.queryStringParameters === null) {
+          body = await listItems();
+        }
+        else {
+          body = await getItem(event.queryStringParameters);
+        }
+        break;
+      case 'POST':
+        body = await createItem(JSON.parse(event.body))
+        break;
+      case 'PUT':
+        body = await updateItem(JSON.parse(event.body))
+        break;
+      default:
+        throw new Error(`Unsupported method "${event.httpMethod}"`);
+    }
   } catch (err) {
-    return err
+    statusCode = '400';
+    body = err.message;
+  } finally {
+    body = JSON.stringify(body);
   }
+
+  return {
+    'statusCode': statusCode,
+    'body': JSON.stringify({
+      'data': body
+      // location: ret.data.trim()
+    }),
+    'headers': headers,
+  };
+};
+async function createItem(context) {
+  const { contact, name, email, message } = context;
+  const timestamp = new Date().getTime();
+  const params = {
+    TableName: 'contact',
+    /* Item properties will depend on your application concerns */
+    Item: {
+      id: uuid.v1(),
+      contact: contact,
+      createdAt: timestamp,
+      name: name,
+      email: email,
+
+      message: message
+    }
+  }
+
+   return await ddb.put(params).promise();
+
+
+
+}
+async function updateItem(context) {
+  const {id, name, message, email, createdAt} = context;
+  const timestamp = new Date().getTime();
+  const params = {
+    TableName: 'contact',
+    Key: {
+      id: context.id
+    },
+    UpdateExpression: 'set #name = :n, message = :m, email= :e, updatedAt = :u, createdAt= :c',
+    ExpressionAttributeNames: {
+      "#name": "name"
+    },
+    ExpressionAttributeValues: {
+      ':n': name,
+      ':m': message,
+      ':e': email,
+      ':u': timestamp,
+      ':c': createdAt
+    }
+
+  };
+  return await ddb.update(params).promise();
+  /*
+try {
+  await docClient.put(params).promise();
+} catch (err) {
+  return err;
+}
+*/
+}
+
+async function getItem(context) {
+  let ret;
+  const { id } = context
+  const params = {
+    TableName: 'contact',
+
+    Key: {
+      id: id,
+
+    }
+
+  };
+
+  ret = await ddb.get(params).promise();
+  return ret;
+}
+async function deleteItem(context) {
+  const { id } = context;
+  const params = {
+    TableName: 'contact',
+    Key: {
+      id: id
+    }
+  };
+  return await ddb.delete(params).promise().then(res => {
+    return "item not present"
+  });
+
+
+}
+
+async function listItems() {
+  const params = {
+    TableName: 'contact'
+  };
+
+  return await ddb.scan(params).promise().then(res => {
+    return res.Items
+  })
+
 }
